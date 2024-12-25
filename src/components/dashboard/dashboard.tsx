@@ -11,8 +11,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useScrollAnimation } from "@/utils/animation";
-import { cn } from "@/lib/utils";
+import { useScrollAnimation } from "../../utils/animation";
+import { cn } from "../../lib/utils";
 
 const cumulativeData = [
   { name: "Jan", value: 4000 },

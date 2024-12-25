@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useScrollPosition } from "@/utils/animation";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "../theme-toggle/theme-toggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
