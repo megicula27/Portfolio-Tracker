@@ -61,7 +61,7 @@ export default function Invest() {
             {searchResults.map((stock) => (
               <div
                 key={stock.symbol}
-                className="bg-card p-4 rounded-lg shadow-lg"
+                className="bg-card p-4 rounded-lg shadow-lg dark:shadow-white/10 transition-all duration-300"
               >
                 <div className="flex justify-between items-center">
                   <div>

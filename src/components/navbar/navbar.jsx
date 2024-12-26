@@ -37,23 +37,23 @@ export function Navbar() {
                 <Menu className="h-6 w-6" />
               </button>
               {isOpen && (
-                <div className="absolute top-full left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="absolute top-full right-0 w-48 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                   <div className="px-4 py-2 space-y-2">
                     <Link
                       href="/"
-                      className="block py-2 text-foreground hover:text-primary"
+                      className="block py-2 text-foreground hover:text-primary text-right"
                     >
                       Dashboard
                     </Link>
                     <Link
                       href="/invest"
-                      className="block py-2 text-foreground hover:text-primary"
+                      className="block py-2 text-foreground hover:text-primary text-right"
                     >
                       Invest
                     </Link>
                     <Link
                       href="/login"
-                      className="block py-2 text-foreground hover:text-primary"
+                      className="block py-2 text-foreground hover:text-primary text-right"
                     >
                       Login/Logout
                     </Link>

@@ -30,7 +30,8 @@
     "**/*.ts",
     "**/*.tsx",
     "src/components/navbar/navbar.jsx",
-    "src/app/(app)/invest/page.jsx"
+    "src/app/(app)/invest/page.jsx",
+    "src/components/dashboard/dashboard.jsx"
   ],
   "exclude": ["node_modules"]
 }

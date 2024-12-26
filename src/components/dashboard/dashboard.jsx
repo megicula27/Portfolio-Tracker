@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -11,8 +11,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useScrollAnimation } from "../../utils/animation";
-import { cn } from "../../lib/utils";
+import { useScrollAnimation } from "@/utils/animation";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const cumulativeData = [
   { name: "Jan", value: 4000 },
@@ -33,9 +34,10 @@ const stocks = [
 
 export function Dashboard() {
   const { elementRef, isVisible } = useScrollAnimation();
-  const [selectedStock, setSelectedStock] = useState<number | null>(null);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const graphRef = useRef(null);
 
-  const getStockData = (stockId: number) => {
+  const getStockData = (stockId) => {
     return [
       { name: "Jan", value: stocks[stockId - 1].buyPrice },
       { name: "Feb", value: stocks[stockId - 1].buyPrice * 1.05 },
@@ -44,6 +46,13 @@ export function Dashboard() {
       { name: "May", value: stocks[stockId - 1].buyPrice * 1.15 },
       { name: "Jun", value: stocks[stockId - 1].currentPrice },
     ];
+  };
+
+  const handleStockClick = (stockId) => {
+    setSelectedStock(stockId);
+    setTimeout(() => {
+      graphRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   return (
@@ -57,7 +66,7 @@ export function Dashboard() {
       >
         <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
 
-        <div className="bg-card p-4 rounded-lg shadow-lg">
+        <div className="bg-card p-4 rounded-lg shadow-lg dark:shadow-white/10 transition-all duration-300">
           <h2 className="text-xl font-semibold mb-4 text-card-foreground">
             Portfolio Performance
           </h2>
@@ -107,18 +116,30 @@ export function Dashboard() {
           {stocks.map((stock) => (
             <div
               key={stock.id}
-              className="bg-card p-4 rounded-lg shadow-lg cursor-pointer hover:bg-secondary transition-colors"
-              onClick={() => setSelectedStock(stock.id)}
+              className="bg-card p-4 rounded-lg shadow-lg dark:shadow-white/10 cursor-pointer hover:bg-secondary transition-colors"
+              onClick={() => handleStockClick(stock.id)}
             >
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold text-card-foreground">
                   {stock.name}
                 </h3>
-                <button className="bg-destructive text-destructive-foreground px-3 py-1 rounded hover:bg-destructive/90 transition-colors">
-                  Sell
-                </button>
+                <div className="space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStockClick(stock.id);
+                    }}
+                  >
+                    View Tracker
+                  </Button>
+                  <Button variant="destructive" size="sm">
+                    Sell
+                  </Button>
+                </div>
               </div>
-              <div className="mt-2 flex justify-between text-sm text-card-foreground">
+              <div className="flex justify-between text-sm text-card-foreground">
                 <span>Buy Price: ${stock.buyPrice}</span>
                 <span>Current Price: ${stock.currentPrice}</span>
                 <span
@@ -135,7 +156,10 @@ export function Dashboard() {
         </div>
 
         {selectedStock && (
-          <div className="bg-card p-4 rounded-lg shadow-lg mt-8">
+          <div
+            ref={graphRef}
+            className="bg-card p-4 rounded-lg shadow-lg dark:shadow-white/10 mt-8 transition-all duration-300"
+          >
             <h2 className="text-xl font-semibold mb-4 text-card-foreground">
               {stocks[selectedStock - 1].name} Performance
             </h2>
