@@ -22,6 +22,18 @@ const UserSchema = new mongoose.Schema(
     },
 
     // Custom fields for your application
+    stocks: {
+      type: [
+        {
+          name: { type: String, required: true }, // Stock name
+          boughtPrice: { type: Number, required: true }, // Bought price for the stock
+          quantity: { type: Number, default: 1 }, // Quantity of stocks bought
+          purchasedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+
     preferences: {
       currency: {
         type: String,
@@ -44,11 +56,5 @@ const UserSchema = new mongoose.Schema(
 );
 
 //  virtual populate for the user's portfolio
-UserSchema.virtual("portfolio", {
-  ref: "Portfolio",
-  localField: "_id",
-  foreignField: "userId",
-  justOne: true,
-});
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);
