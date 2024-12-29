@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/dbConnect"; // Replace with your DB connection utility
-import User from "@/models/User"; // Adjust the path to your User model
+import dbConnect from "@/database/mongoDb/db"; // Replace with your DB connection utility
+import User from "@/models/User/User"; // Adjust the path to your User model
 
 export const GET = async (req) => {
   try {

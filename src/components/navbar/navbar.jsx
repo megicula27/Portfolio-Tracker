@@ -6,10 +6,12 @@ import { Menu, X } from "lucide-react";
 import { useScrollPosition } from "@/utils/animation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle/theme-toggle";
+import { useSession, signOut } from "next-auth/react";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const scrolled = useScrollPosition();
+  const { data: session } = useSession();
 
   return (
     <nav
@@ -51,12 +53,21 @@ export function Navbar() {
                     >
                       Invest
                     </Link>
-                    <Link
-                      href="/login"
-                      className="block py-2 text-foreground hover:text-primary text-right"
-                    >
-                      Login/Logout
-                    </Link>
+                    {session ? (
+                      <button
+                        onClick={() => signOut()}
+                        className="block py-2 text-foreground hover:text-primary text-right"
+                      >
+                        Logout
+                      </button>
+                    ) : (
+                      <Link
+                        href="/auth"
+                        className="block py-2 text-foreground hover:text-primary text-right"
+                      >
+                        Login
+                      </Link>
+                    )}
                   </div>
                 </div>
               )}
@@ -75,12 +86,21 @@ export function Navbar() {
                 </Link>
               </div>
               <div className="flex items-center space-x-4">
-                <Link
-                  href="/login"
-                  className="text-foreground hover:text-primary"
-                >
-                  Login/Logout
-                </Link>
+                {session ? (
+                  <button
+                    onClick={() => signOut()}
+                    className="text-foreground hover:text-primary"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <Link
+                    href="/auth/"
+                    className="text-foreground hover:text-primary"
+                  >
+                    Login
+                  </Link>
+                )}
                 <ThemeToggle />
               </div>
             </>

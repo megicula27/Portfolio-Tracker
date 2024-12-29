@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import User from "@/models/User/User";
 import dbConnect from "@/database/mongoDb/db";
 import { NextResponse } from "next/server";

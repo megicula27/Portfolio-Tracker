@@ -18,8 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { Toaster, toast } from "react-hot-toast";
 
-const ALPHA_VANTAGE_API_KEY = process.env.NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY;
-
 export default function Invest() {
   const { elementRef, isVisible } = useScrollAnimation();
   const { data: session } = useSession();
@@ -29,48 +27,18 @@ export default function Invest() {
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedStock, setSelectedStock] = useState(null);
-  const [quantity, setQuantity] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch top gainers/trending stocks
+  // Fetch trending stocks using getTrendingStocks
   useEffect(() => {
     const fetchTrendingStocks = async () => {
       try {
-        const response = await axios.get(
-          `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${ALPHA_VANTAGE_API_KEY}`
-        );
+        const res = await axios.get("/api/stocks/getTrendingStocks");
+        const trendingStocksData = res.data;
+        console.log(trendingStocksData);
 
-        // Get top 10 gainers
-        console.log(response);
-
-        const topGainers = response.data.top_gainers
-          .slice(0, 10)
-          .map((stock) => ({
-            symbol: stock.ticker,
-            name: stock.ticker, // Alpha Vantage doesn't provide company names in this endpoint
-            price: parseFloat(stock.price),
-            change: parseFloat(stock.change_percentage),
-          }));
-
-        // Fetch company names for each stock
-        const stocksWithNames = await Promise.all(
-          topGainers.map(async (stock) => {
-            try {
-              const symbolInfo = await axios.get(
-                `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${stock.symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`
-              );
-              return {
-                ...stock,
-                name: symbolInfo.data.Name || stock.symbol,
-              };
-            } catch (error) {
-              return stock;
-            }
-          })
-        );
-
-        setTrendingStocks(stocksWithNames);
-        setSearchResults(stocksWithNames);
+        setTrendingStocks(trendingStocksData);
+        setSearchResults(trendingStocksData);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching trending stocks:", error);
@@ -92,33 +60,11 @@ export default function Invest() {
 
     setSearchLoading(true);
     try {
-      const response = await axios.get(
-        `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${searchTerm}&apikey=${ALPHA_VANTAGE_API_KEY}`
+      const res = await axios.get(
+        `/api/stocks/searchStocks?query=${searchTerm}`
       );
-
-      const matches = response.data.bestMatches || [];
-      const stockDetails = await Promise.all(
-        matches.slice(0, 10).map(async (match) => {
-          try {
-            const quote = await axios.get(
-              `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${match["1. symbol"]}&apikey=${ALPHA_VANTAGE_API_KEY}`
-            );
-
-            return {
-              symbol: match["1. symbol"],
-              name: match["2. name"],
-              price: parseFloat(quote.data["Global Quote"]["05. price"]) || 0,
-              change:
-                parseFloat(quote.data["Global Quote"]["10. change percent"]) ||
-                0,
-            };
-          } catch (error) {
-            return null;
-          }
-        })
-      );
-
-      setSearchResults(stockDetails.filter(Boolean));
+      const searchResultsData = res.data;
+      setSearchResults(searchResultsData);
     } catch (error) {
       console.error("Error searching stocks:", error);
       toast.error("Failed to search stocks. Please try again.");
@@ -133,22 +79,33 @@ export default function Invest() {
       return;
     }
 
+    if (!selectedStock || selectedStock.price == null) {
+      toast.error("Unable to purchase stock. Price information is missing.");
+      return;
+    }
+
     try {
-      await axios.post("/api/user/stocks/buy-stock", {
+      const response = await axios.post("/api/user/stocks/buy-stocks", {
         userId: session.user.id,
         stock: {
           name: selectedStock.symbol,
           boughtPrice: selectedStock.price,
-          quantity: quantity,
+          quantity: 1, // Fixed quantity of 1
         },
       });
 
-      toast.success(
-        `Successfully purchased ${quantity} shares of ${selectedStock.symbol}`
-      );
-      setIsDialogOpen(false);
-      setSelectedStock(null);
-      setQuantity(1);
+      if (response.data.success) {
+        toast.success(
+          `Successfully purchased 1 share of ${selectedStock.symbol}`
+        );
+        setIsDialogOpen(false);
+        setSelectedStock(null);
+      } else {
+        console.error("Error purchasing stock:", response.data.error);
+        toast.error(
+          response.data.error || "Failed to purchase stock. Please try again."
+        );
+      }
     } catch (error) {
       console.error("Error purchasing stock:", error);
       toast.error("Failed to purchase stock. Please try again.");
@@ -202,22 +159,28 @@ export default function Invest() {
                         {stock.symbol}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {stock.name}
+                        {stock.name || "N/A"}
                       </p>
                     </div>
                     <div className="text-right space-y-2">
                       <p className="text-lg font-semibold text-card-foreground">
-                        ${stock.price.toFixed(2)}
+                        {stock.price != null
+                          ? `$${stock.price.toFixed(2)}`
+                          : "N/A"}
                       </p>
-                      <p
-                        className={cn(
-                          "text-sm",
-                          stock.change >= 0 ? "text-green-500" : "text-red-500"
-                        )}
-                      >
-                        {stock.change >= 0 ? "+" : ""}
-                        {stock.change.toFixed(2)}%
-                      </p>
+                      {stock.changePercent != null && (
+                        <p
+                          className={cn(
+                            "text-sm",
+                            stock.changePercent >= 0
+                              ? "text-green-500"
+                              : "text-red-500"
+                          )}
+                        >
+                          {stock.changePercent >= 0 ? "+" : ""}
+                          {stock.changePercent.toFixed(2)}%
+                        </p>
+                      )}
                       <Button
                         size="sm"
                         className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -225,6 +188,7 @@ export default function Invest() {
                           setSelectedStock(stock);
                           setIsDialogOpen(true);
                         }}
+                        disabled={stock.price == null}
                       >
                         Buy
                       </Button>
@@ -243,7 +207,7 @@ export default function Invest() {
           <DialogHeader>
             <DialogTitle>Purchase Stock</DialogTitle>
             <DialogDescription>
-              Enter the quantity of shares you want to purchase
+              Confirm your purchase of 1 share
             </DialogDescription>
           </DialogHeader>
 
@@ -254,23 +218,44 @@ export default function Invest() {
                 <span>{selectedStock.symbol}</span>
               </div>
               <div className="flex justify-between text-sm">
+                <span>Company:</span>
+                <span>{selectedStock.name || "N/A"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span>Price per share:</span>
-                <span>${selectedStock.price.toFixed(2)}</span>
+                <span>
+                  {selectedStock.price != null
+                    ? `$${selectedStock.price.toFixed(2)}`
+                    : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Quantity:</span>
-                <Input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="w-24"
-                />
+                <span>1</span>
               </div>
               <div className="flex justify-between font-semibold">
                 <span>Total:</span>
-                <span>${(selectedStock.price * quantity).toFixed(2)}</span>
+                <span>
+                  {selectedStock.price != null
+                    ? `$${selectedStock.price.toFixed(2)}`
+                    : "N/A"}
+                </span>
               </div>
+              {selectedStock.changePercent != null && (
+                <div className="flex justify-between text-sm">
+                  <span>Change:</span>
+                  <span
+                    className={
+                      selectedStock.changePercent >= 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }
+                  >
+                    {selectedStock.changePercent >= 0 ? "+" : ""}
+                    {selectedStock.changePercent.toFixed(2)}%
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

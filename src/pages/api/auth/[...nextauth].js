@@ -39,6 +39,7 @@ const options = {
         if (!isValidPassword) {
           throw new Error("Incorrect password");
         }
+        console.log("login process started");
 
         // Return user object if authentication successful
         return {

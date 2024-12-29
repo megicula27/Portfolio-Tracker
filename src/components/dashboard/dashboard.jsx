@@ -43,11 +43,14 @@ export function Dashboard() {
   const fetchStocksData = async () => {
     try {
       // Get user's stocks from backend
-      const { data: userStocks } = await axios.get("/api/user/stocks", {
-        headers: {
-          "user-id": session?.user?.id,
-        },
-      });
+      const { data: userStocks } = await axios.get(
+        "/api/user/stocks/all-stocks",
+        {
+          headers: {
+            "user-id": session?.user?.id,
+          },
+        }
+      );
 
       // Fetch current price and intraday data for each stock
       const stocksWithData = await Promise.all(
