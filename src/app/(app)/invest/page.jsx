@@ -85,7 +85,7 @@ export default function Invest() {
     }
 
     try {
-      const response = await axios.post("/api/user/stocks/buy-stocks", {
+      const response = await axios.post("/api/user/stocks/buy-stock", {
         userId: session.user.id,
         stock: {
           name: selectedStock.symbol,

@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/dbConnect";
-import User from "@/models/User";
+import dbConnect from "@/database/mongoDb/db";
+import User from "@/models/User/User";
 
 export const POST = async (req) => {
   try {
     // Parse the incoming request body
     const body = await req.json();
-    const { userId, stockName } = body;
+    const { userId, stock } = body;
 
-    if (!userId || !stockName) {
+    if (!userId || !stock.name) {
       return NextResponse.json(
         { message: "User ID and stock name are required." },
         { status: 400 }
@@ -25,9 +25,7 @@ export const POST = async (req) => {
     }
 
     // Remove the stock with the given name from the user's portfolio
-    const updatedStocks = user.stocks.filter(
-      (stock) => stock.name !== stockName
-    );
+    const updatedStocks = user.stocks.filter((st) => st.name !== stock.name);
 
     if (updatedStocks.length === user.stocks.length) {
       return NextResponse.json(
@@ -35,7 +33,7 @@ export const POST = async (req) => {
         { status: 404 }
       );
     }
-
+    user.portfolio = user.portfolio - stock.buyPrice * stock.quantity;
     // Update the user's stocks and save
     user.stocks = updatedStocks;
     await user.save();

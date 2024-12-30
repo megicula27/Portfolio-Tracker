@@ -37,6 +37,11 @@ const UserSchema = new mongoose.Schema(
       default: [],
     },
 
+    portfolio: {
+      type: Number,
+      default: 0,
+    },
+
     preferences: {
       currency: {
         type: String,

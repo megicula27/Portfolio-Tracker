@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import yahooFinance from "yahoo-finance2";
+
 // Finnhub API Configuration
 const FINNHUB_API_KEY = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
@@ -23,31 +25,77 @@ const apiClient = axios.create({
  * @param {string} symbol - Stock symbol (e.g., AAPL).
  * @returns {Promise<number[]>} - Weekly closing prices.
  */
+// export const getWeeklyStockData = async (symbol) => {
+//   try {
+//     const oneYearAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 365;
+//     const currentTime = Math.floor(Date.now() / 1000);
+
+//     const response = await apiClient.get("/stock/candle", {
+//       params: {
+//         symbol,
+//         resolution: "W",
+//         from: oneYearAgo,
+//         to: currentTime,
+//       },
+//     });
+
+//     if (response.data.s !== "ok") {
+//       throw new Error("No data available for the given symbol.");
+//     }
+
+//     return response.data.c; // Return closing prices
+//   } catch (error) {
+//     console.error(
+//       "Error fetching weekly stock data:",
+//       error.response?.data || error.message
+//     );
+//     throw new Error("Failed to fetch weekly stock data");
+//   }
+// };
+
+/**
+ * Fetch daily closing prices for the last 7 trading days
+ * @param {string} symbol - Stock symbol (e.g., AAPL)
+ * @returns {Promise<number[]>} - Array of closing prices
+ */
 export const getWeeklyStockData = async (symbol) => {
   try {
-    const oneYearAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 365;
-    const currentTime = Math.floor(Date.now() / 1000);
+    // Get the current date
+    const end = Math.floor(Date.now() / 1000);
+    // Get date from 7 days ago
+    const start = end - 7 * 24 * 60 * 60;
 
     const response = await apiClient.get("/stock/candle", {
       params: {
         symbol,
-        resolution: "W",
-        from: oneYearAgo,
-        to: currentTime,
+        resolution: "M", // Daily resolution
+        from: start,
+        to: end,
       },
     });
 
-    if (response.data.s !== "ok") {
+    if (!response.data || response.data.s === "no_data") {
       throw new Error("No data available for the given symbol.");
     }
 
-    return response.data.c; // Return closing prices
+    // Transform the data into a more usable format
+    const { c, h, l, o, t, v } = response.data;
+    const weeklyData = t.map((timestamp, index) => ({
+      date: new Date(timestamp * 1000).toISOString().split("T")[0],
+      open: o[index],
+      high: h[index],
+      low: l[index],
+      close: c[index],
+      volume: v[index],
+    }));
+
+    return weeklyData;
   } catch (error) {
     console.error(
       "Error fetching weekly stock data:",
       error.response?.data || error.message
     );
-    throw new Error("Failed to fetch weekly stock data");
+    throw new Error("Failed to fetch stock data");
   }
 };
 
@@ -186,5 +234,39 @@ export const searchStocks = async (query) => {
       error.response?.data || error.message
     );
     throw new Error("Failed to search stocks");
+  }
+};
+
+export const fetchYahooWeeklyData = async (symbol) => {
+  try {
+    // Set the query options correctly
+    const queryOptions = {
+      period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+      period2: new Date().toISOString(), // Today
+      interval: "1d", // Daily interval
+    };
+
+    // Fetch historical data
+    const data = await yahooFinance.historical(symbol, queryOptions);
+
+    console.log(data);
+
+    if (!data || data.length === 0) {
+      throw new Error("No data available for the given symbol.");
+    }
+
+    // Transform data into the desired format
+    const weeklyData = data.map((entry) => ({
+      date: entry.date.toISOString().split("T")[0],
+      open: entry.open,
+      high: entry.high,
+      close: entry.close,
+    }));
+    console.log(weeklyData);
+
+    return weeklyData;
+  } catch (error) {
+    console.error("Error fetching weekly stock data:", error.message);
+    throw new Error("Failed to fetch stock data");
   }
 };

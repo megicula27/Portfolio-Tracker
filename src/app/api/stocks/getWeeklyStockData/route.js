@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWeeklyStockData } from "@/utils/stockUtils";
+import { getWeeklyStockData, fetchYahooWeeklyData } from "@/utils/stockUtils";
 
-export async function GET(reqs) {
+export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
@@ -13,7 +13,7 @@ export async function GET(reqs) {
       );
     }
 
-    const weeklyData = await getWeeklyStockData(symbol);
+    const weeklyData = await fetchYahooWeeklyData(symbol);
     return NextResponse.json(weeklyData);
   } catch (error) {
     console.error("Error fetching weekly data:", error);

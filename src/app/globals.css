@@ -83,6 +83,14 @@
     transform: translateY(0);
   }
 }
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
 
 body {
   background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);

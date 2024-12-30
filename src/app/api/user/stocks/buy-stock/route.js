@@ -32,18 +32,23 @@ export const POST = async (req) => {
       purchasedAt: new Date(), // Add a timestamp for when the stock was purchased
     };
 
+    user.portfolio = user.portfolio + stock.boughtPrice * stock.quantity;
     // Push the stock into the user's stocks array
     user.stocks.push(newStock);
     await user.save();
 
     return NextResponse.json(
-      { message: "Stock purchased successfully.", stock: newStock },
+      {
+        message: "Stock purchased successfully.",
+        stock: newStock,
+        success: true,
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error purchasing stock:", error);
     return NextResponse.json(
-      { message: "An error occurred while purchasing stock." },
+      { message: "An error occurred while purchasing stock.", success: false },
       { status: 500 }
     );
   }

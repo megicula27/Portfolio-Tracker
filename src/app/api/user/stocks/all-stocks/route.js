@@ -18,13 +18,16 @@ export const GET = async (req) => {
     }
 
     // Fetch the user and their stocks
-    const user = await User.findById(userId, "stocks").lean(); // Fetch only the stocks field
+    const user = await User.findById(userId, "stocks portfolio").lean(); // Fetch only the stocks field
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Return the stocks
-    return NextResponse.json({ stocks: user.stocks }, { status: 200 });
+    return NextResponse.json(
+      { stocks: user.stocks, portfolio: user.portfolio },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching stocks:", error);
     return NextResponse.json(
