@@ -4,7 +4,6 @@ import User from "@/models/User/User";
 
 export const POST = async (req) => {
   try {
-    // Parse the incoming request body
     const body = await req.json();
     const { userId, stock } = body;
 
@@ -15,25 +14,35 @@ export const POST = async (req) => {
       );
     }
 
-    // Connect to the database
     await dbConnect();
 
-    // Find the user by ID
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ message: "User not found." }, { status: 404 });
     }
 
-    // Add stock to the user's portfolio
+    // Check if the stock already exists in the user's portfolio
+    const existingStock = user.stocks.find((s) => s.name === stock.name);
+    if (existingStock) {
+      return NextResponse.json(
+        {
+          message: `You already own ${stock.name}.`,
+          success: false,
+          error: "Stock already exists in portfolio.",
+        },
+        { status: 202 }
+      );
+    }
+
+    // Add the new stock to the portfolio
     const newStock = {
       name: stock.name,
       boughtPrice: stock.boughtPrice,
       quantity: stock.quantity,
-      purchasedAt: new Date(), // Add a timestamp for when the stock was purchased
+      purchasedAt: new Date(),
     };
 
     user.portfolio = user.portfolio + stock.boughtPrice * stock.quantity;
-    // Push the stock into the user's stocks array
     user.stocks.push(newStock);
     await user.save();
 

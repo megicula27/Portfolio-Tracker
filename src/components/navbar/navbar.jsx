@@ -56,7 +56,7 @@ export function Navbar() {
                     {session ? (
                       <button
                         onClick={() => signOut()}
-                        className="block py-2 text-foreground hover:text-primary text-right"
+                        className="w-full block py-2 text-foreground hover:text-primary text-right"
                       >
                         Logout
                       </button>

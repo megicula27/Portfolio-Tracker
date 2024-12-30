@@ -100,10 +100,10 @@ export default function Invest() {
         );
         setIsDialogOpen(false);
         setSelectedStock(null);
-      } else {
-        console.error("Error purchasing stock:", response.data.error);
+      } else if (response.status === 202) {
         toast.error(
-          response.data.error || "Failed to purchase stock. Please try again."
+          `You already own ${selectedStock.symbol}. Purchase failed.` ||
+            response.data.error
         );
       }
     } catch (error) {

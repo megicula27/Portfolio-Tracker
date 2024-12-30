@@ -149,6 +149,7 @@ export function Dashboard() {
         // setTimeout(() => {
         //   fetchStocksData();
         // }, 500); // Delay fetch to let toast display
+        fetchStocksData();
       }
       setIsDialogOpen(false);
       setSellingStock(null);
@@ -413,7 +414,7 @@ export function Dashboard() {
             )}
 
             {/* Individual Stock Performance */}
-            {selectedStock && (
+            {selectedStock && stocks.length > 0 && (
               <div
                 ref={graphRef}
                 className="bg-card p-4 rounded-lg shadow-lg dark:shadow-white/10 mt-8 transition-all duration-300"
