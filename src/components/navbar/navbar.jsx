@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useScrollPosition } from "@/utils/animation";
@@ -8,9 +8,32 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle/theme-toggle";
 import { useSession, signOut } from "next-auth/react";
 
+// Custom hook for mobile detection
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px is the 'md' breakpoint in Tailwind
+    };
+
+    // Check on mount
+    checkMobile();
+
+    // Add event listener
+    window.addEventListener("resize", checkMobile);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const scrolled = useScrollPosition();
+  const isMobile = useIsMobile();
   const { data: session } = useSession();
 
   return (
@@ -30,11 +53,11 @@ export function Navbar() {
             </Link>
           </div>
 
-          {scrolled ? (
+          {scrolled || isMobile ? (
             <>
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="text-foreground"
+                className="text-foreground p-2 hover:bg-slate-900 rounded-md"
               >
                 <Menu className="h-6 w-6" />
               </button>
