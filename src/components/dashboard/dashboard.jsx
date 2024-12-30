@@ -38,7 +38,7 @@ export function Dashboard() {
   const graphRef = useRef(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [sellingStock, setSellingStock] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch user's stocks and their data
   const fetchStocksData = async () => {
@@ -52,6 +52,10 @@ export function Dashboard() {
           },
         }
       );
+      if (!userStocks?.stocks) {
+        return;
+      }
+
       setBoughtValue(userStocks.portfolio.toFixed(2));
       const stocksWithData = await Promise.all(
         userStocks.stocks.map(async (stock) => {

@@ -35,8 +35,6 @@ export default function Invest() {
       try {
         const res = await axios.get("/api/stocks/getTrendingStocks");
         const trendingStocksData = res.data;
-        console.log(trendingStocksData);
-
         setTrendingStocks(trendingStocksData);
         setSearchResults(trendingStocksData);
         setLoading(false);
