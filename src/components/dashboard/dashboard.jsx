@@ -97,8 +97,8 @@ export function Dashboard() {
             return {
               id: stock.name,
               name: stock.name,
-              buyPrice: stock.boughtPrice,
-              currentPrice: realTimeData.data.currentPrice,
+              buyPrice: stock.boughtPrice.toFixed(2),
+              currentPrice: realTimeData.data.currentPrice.toFixed(2),
               change: realTimeData.data.changePercent,
               intradayData,
               quantity: stock.quantity,
@@ -261,12 +261,12 @@ export function Dashboard() {
 
   if (status === "unauthenticated") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 mt-52 bg-card p-8 rounded-lg shadow-lg dark:shadow-white/10 text-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">
             Please log in to view your dashboard
           </h1>
-          <Link href="/login" passHref>
+          <Link href="/auth" passHref>
             <Button size="lg">Go to Login Page</Button>
           </Link>
         </div>
@@ -453,9 +453,7 @@ export function Dashboard() {
                       </div>
                       <div className="flex justify-between text-sm text-card-foreground">
                         <span>Buy Price: ${stock.buyPrice}</span>
-                        <span>
-                          Current Price: ${stock.currentPrice.toFixed(2)}
-                        </span>
+                        <span>Current Price: ${stock.currentPrice}</span>
                         <span>Quantity: {stock.quantity}</span>
                         <span
                           className={
@@ -559,7 +557,7 @@ export function Dashboard() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Current Price:</span>
-                      <span>${sellingStock.currentPrice.toFixed(2)}</span>
+                      <span>${sellingStock.currentPrice}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Quantity:</span>
@@ -567,7 +565,7 @@ export function Dashboard() {
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span>Total:</span>
-                      <span>${sellingStock.currentPrice.toFixed(2)}</span>
+                      <span>${sellingStock.currentPrice}</span>
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span>Profit/Loss:</span>
@@ -578,10 +576,7 @@ export function Dashboard() {
                             : "text-red-500"
                         }
                       >
-                        $
-                        {(
-                          sellingStock.currentPrice - sellingStock.buyPrice
-                        ).toFixed(2)}
+                        ${sellingStock.currentPrice - sellingStock.buyPrice}
                       </span>
                     </div>
                   </div>
