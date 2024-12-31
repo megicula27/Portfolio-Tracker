@@ -249,8 +249,6 @@ export const fetchYahooWeeklyData = async (symbol) => {
     // Fetch historical data
     const data = await yahooFinance.historical(symbol, queryOptions);
 
-    console.log(data);
-
     if (!data || data.length === 0) {
       throw new Error("No data available for the given symbol.");
     }
@@ -262,11 +260,10 @@ export const fetchYahooWeeklyData = async (symbol) => {
       high: entry.high,
       close: entry.close,
     }));
-    console.log(weeklyData);
 
     return weeklyData;
   } catch (error) {
-    console.error("Error fetching weekly stock data:", error.message);
+    console.error("Error fetching weekly stock data:", error);
     throw new Error("Failed to fetch stock data");
   }
 };

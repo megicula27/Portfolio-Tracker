@@ -26,19 +26,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "react-hot-toast";
+import { showWarning } from "@/utils/notifications";
 import { StockLoading } from "../loader/loader";
 
 export function Dashboard() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { elementRef, isVisible } = useScrollAnimation();
   const [selectedStock, setSelectedStock] = useState(null);
   const [stocks, setStocks] = useState([]);
   const [cumulativeData, setCumulativeData] = useState([]);
-  const [boughtValue, setBoughtValue] = useState();
+  const [boughtValue, setBoughtValue] = useState(0);
   const graphRef = useRef(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [sellingStock, setSellingStock] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSelling, setIsSelling] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   // Fetch user's stocks and their data
   const fetchStocksData = async () => {
@@ -59,50 +63,72 @@ export function Dashboard() {
       setBoughtValue(userStocks.portfolio.toFixed(2));
       const stocksWithData = await Promise.all(
         userStocks.stocks.map(async (stock) => {
-          // Get real-time price data
-          const realTimeData = await axios.get(
-            `/api/stocks/getRealTimePrice?symbol=${stock.name}`
-          );
+          try {
+            // Get real-time price data
+            const realTimeData = await axios.get(
+              `/api/stocks/getRealTimePrice?symbol=${stock.name}`
+            );
 
-          // Get weekly closing prices
-          const weeklyPrices = await axios.get(
-            `/api/stocks/getWeeklyStockData?symbol=${stock.name}`
-          );
+            let intradayData = [];
+            try {
+              // Get weekly closing prices
+              const weeklyPrices = await axios.get(
+                `/api/stocks/getWeeklyStockData?symbol=${stock.name}`
+              );
+              // Map the weekly data to your desired format
+              intradayData = weeklyPrices.data.map((price, index) => ({
+                name: price.date,
+                value: parseFloat(price.close).toFixed(1),
+              }));
+            } catch (weeklyDataError) {
+              // console.error(
+              //   `Failed to fetch weekly data for ${stock.name}:`,
+              //   weeklyDataError
+              // );
+              // Provide a fallback data point if weekly data is unavailable
+              intradayData = [
+                {
+                  name: "Current",
+                  value: realTimeData.data.currentPrice.toFixed(1),
+                },
+              ];
+            }
 
-          // Map the weekly data to your desired format
-          const intradayData = weeklyPrices.data.map((price, index) => ({
-            name: price.date, // Use the date from the API response
-            value: parseFloat(price.close).toFixed(1), // Use the closing price for the stock value
-          }));
-
-          return {
-            id: stock.name,
-            name: stock.name,
-            buyPrice: stock.boughtPrice,
-            currentPrice: realTimeData.data.currentPrice,
-            change: realTimeData.data.changePercent,
-            intradayData, // Set the mapped weekly data
-            quantity: stock.quantity,
-          };
+            return {
+              id: stock.name,
+              name: stock.name,
+              buyPrice: stock.boughtPrice,
+              currentPrice: realTimeData.data.currentPrice,
+              change: realTimeData.data.changePercent,
+              intradayData,
+              quantity: stock.quantity,
+            };
+          } catch (error) {
+            console.error(`Failed to fetch data for ${stock.name}:`, error);
+            return null;
+          }
         })
       );
 
-      setStocks(stocksWithData);
+      const validStocksWithData = stocksWithData.filter(
+        (stock) => stock !== null
+      );
+      setStocks(validStocksWithData);
 
       // Calculate cumulative portfolio value
-      if (stocksWithData.length > 0) {
-        const portfolioValue = stocksWithData[0].intradayData.map(
+      if (validStocksWithData.length > 0) {
+        const portfolioValue = validStocksWithData[0].intradayData.map(
           (_, index) => ({
-            name: stocksWithData[0].intradayData[index].name,
+            name: validStocksWithData[0].intradayData[index].name,
             value: parseFloat(
-              stocksWithData
+              validStocksWithData
                 .reduce((sum, stock) => {
                   return (
                     sum +
                     (stock.intradayData[index]?.value || 0) * stock.quantity
                   );
                 }, 0)
-                .toFixed(2) // Fix to two decimal places
+                .toFixed(2)
             ),
           })
         );
@@ -114,18 +140,23 @@ export function Dashboard() {
       toast.error("Failed to fetch portfolio data");
     } finally {
       setIsLoading(false);
+      showWarning(
+        "Few stocks doesn't have weekly data available, therefore a dot is displayed in the graph... try selling the stock and buying a different stock for better insight"
+      );
     }
   };
 
   // Initial fetch and setup interval
   useEffect(() => {
-    if (session?.user?.id) {
+    if (status === "authenticated" && session?.user?.id) {
       fetchStocksData();
       const interval = setInterval(fetchStocksData, 300000); // Update every 5 minutes
 
       return () => clearInterval(interval);
+    } else if (status === "unauthenticated") {
+      setIsLoading(false);
     }
-  }, [session]);
+  }, [status, session]);
 
   const handleStockClick = (stockId) => {
     setSelectedStock(stockId);
@@ -141,25 +172,23 @@ export function Dashboard() {
 
   const handleSellConfirm = async () => {
     if (!sellingStock) return;
-
+    setIsSelling(true);
     try {
-      const response = await axios.post("/api/user/stocks/sell-stock", {
+      await axios.post("/api/user/stocks/sell-stock", {
         userId: session.user.id,
         stock: sellingStock,
         quantity: 1, // Fixed quantity of 1
       });
-      if (response.status === 200) {
-        toast.success(`Successfully sold 1 share of ${sellingStock.name}`);
-        // setTimeout(() => {
-        //   fetchStocksData();
-        // }, 500); // Delay fetch to let toast display
-        fetchStocksData();
-      }
+
+      toast.success(`Successfully sold 1 share of ${sellingStock.name}`);
       setIsDialogOpen(false);
       setSellingStock(null);
+      fetchStocksData(); // Refresh the stocks data
     } catch (error) {
       console.error("Error selling stock:", error);
       toast.error("Failed to sell stock. Please try again.");
+    } finally {
+      setIsSelling(false);
     }
   };
 
@@ -184,16 +213,15 @@ export function Dashboard() {
 
     const range = maxValue - minValue;
 
-    // Dynamically adjust the step based on the range
     let step;
     if (range < 1) {
-      step = 0.1; // Small values, e.g., 1.12, 1.14
+      step = 0.1;
     } else if (range <= 50) {
-      step = 5; // Moderate values, e.g., 30, 50
+      step = 5;
     } else if (range <= 500) {
-      step = 50; // Larger values, e.g., 240, 280
+      step = 50;
     } else {
-      step = Math.ceil(range / 10); // Very large values
+      step = Math.ceil(range / 10);
     }
 
     const adjustedMin = Math.floor(minValue / step) * step;
@@ -208,7 +236,7 @@ export function Dashboard() {
 
     const ticks = [];
     for (let value = min; value <= max; value += step) {
-      ticks.push(parseFloat(value.toFixed(2))); // Ensures precision
+      ticks.push(parseFloat(value.toFixed(2)));
     }
 
     return <YAxis {...props} ticks={ticks} />;
@@ -221,14 +249,45 @@ export function Dashboard() {
     );
 
     const totalProfit = totalValue - boughtValue;
-    const profitPercentage = (totalProfit / boughtValue) * 100;
+    const profitPercentage =
+      boughtValue !== 0 ? (totalProfit / boughtValue) * 100 : 0;
 
     return {
       totalValue: totalValue.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
       profitPercentage: profitPercentage.toFixed(2),
     };
-  }, [stocks]);
+  }, [stocks, boughtValue]);
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">
+            Please log in to view your dashboard
+          </h1>
+          <Link href="/login" passHref>
+            <Button size="lg">Go to Login Page</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Error loading dashboard</h1>
+          <p className="mb-4">
+            There was a problem fetching your portfolio data. Please try again
+            later.
+          </p>
+          <Button onClick={fetchStocksData}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-16">
@@ -532,10 +591,15 @@ export function Dashboard() {
                   <Button
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
+                    disabled={isSelling}
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleSellConfirm}>Confirm Sale</Button>
+                  {isSelling ? (
+                    <Button disabled>Hang on tight...</Button>
+                  ) : (
+                    <Button onClick={handleSellConfirm}>Confirm Sale</Button>
+                  )}
                 </DialogFooter>
               </DialogContent>
             </Dialog>

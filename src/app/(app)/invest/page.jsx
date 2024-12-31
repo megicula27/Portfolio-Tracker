@@ -28,6 +28,7 @@ export default function Invest() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedStock, setSelectedStock] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
   // Fetch trending stocks using getTrendingStocks
   useEffect(() => {
@@ -82,6 +83,8 @@ export default function Invest() {
       return;
     }
 
+    setIsPurchasing(true);
+
     try {
       const response = await axios.post("/api/user/stocks/buy-stock", {
         userId: session.user.id,
@@ -107,6 +110,8 @@ export default function Invest() {
     } catch (error) {
       console.error("Error purchasing stock:", error);
       toast.error("Failed to purchase stock. Please try again.");
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
@@ -258,10 +263,18 @@ export default function Invest() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              disabled={isPurchasing}
+            >
               Cancel
             </Button>
-            <Button onClick={handleBuy}>Confirm Purchase</Button>
+            {isPurchasing ? (
+              <Button disabled>Hang on tight...</Button>
+            ) : (
+              <Button onClick={handleBuy}>Confirm Purchase</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
