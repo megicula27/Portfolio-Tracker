@@ -183,6 +183,7 @@ export function Dashboard() {
       toast.success(`Successfully sold 1 share of ${sellingStock.name}`);
       setIsDialogOpen(false);
       setSellingStock(null);
+      setSelectedStock(null);
       fetchStocksData(); // Refresh the stocks data
     } catch (error) {
       console.error("Error selling stock:", error);
