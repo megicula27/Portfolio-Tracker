@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    container_name: sasta_portfolio_tracker
+    ports:
+      - "3000:3000" # Map container port 3000 to host port 3000
+    depends_on:
+      - mongodb
+    command: npm run dev
+
+  mongodb:
+    image: mongo:5.0
+    container_name: mongodb-portfolio
+    ports:
+      - "27017:27017"

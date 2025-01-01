@@ -39,7 +39,7 @@ Make sure you have the following installed:
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/portfolio-tracker.git
+   git clone https://github.com/megicula27/Portfolio-Tracker.git
    cd portfolio-tracker
    ```
 
@@ -47,7 +47,6 @@ Make sure you have the following installed:
 
    ```bash
    FINNHUB_API_KEY=your_finnhub_api_key
-   YAHOO_API_KEY=your_yahoo_api_key
    MONGODB_URI=your_mongodb_connection_string
    ```
 
